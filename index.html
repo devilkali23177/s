@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Digital Journal, Finance & Study Planner</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --text: #1f2937;
+      --text-light: #6b7280;
+      --bg: #f9fafb;
+      --card-bg: #ffffff;
+      --border: #e5e7eb;
+      --error: #dc2626;
+      --success: #10b981;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --radius: 0.5rem;
+    }
+
+    .dark-mode {
+      --primary: #6366f1;
+      --primary-hover: #818cf8;
+      --text: #f3f4f6;
+      --text-light: #9ca3af;
+      --bg: #111827;
+      --card-bg: #1f2937;
+      --border: #374151;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background 0.3s ease, color 0.3s ease;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    h1, h2, h3, h4 {
+      font-weight: 600;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+    }
+
+    small {
+      font-size: 0.875rem;
+      color: var(--text-light);
+    }
+
+    input, textarea, select, button {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      background-color: var(--card-bg);
+      color: var(--text);
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+
+    button.secondary {
+      background-color: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+
+    button.secondary:hover {
+      background-color: rgba(79, 70, 229, 0.1);
+    }
+
+    button.danger {
+      background-color: var(--error);
+    }
+
+    button.danger:hover {
+      background-color: #b91c1c;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn-group button {
+      flex: 1;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .error-msg {
+      color: var(--error);
+      margin-top: -0.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      display: none;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .entry {
+      background-color: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow);
+      border-left: 4px solid var(--primary);
+    }
+
+    .entry h3 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .entry-content {
+      background-image: linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+      background-size: 100% 1.5em;
+      background-attachment: local;
+      line-height: 1.5em;
+      padding: 0.5em 0;
+      white-space: pre-wrap;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .entry-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .entry-actions button {
+      width: auto;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .filters > * {
+      margin-bottom: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      background-color: var(--card-bg);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background-color: rgba(79, 70, 229, 0.1);
+      font-weight: 600;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .file-input-wrapper input[type="file"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .file-input-btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background-color: var(--card-bg);
+      color: var(--text);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .file-input-btn:hover {
+      border-color: var(--primary);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 0;
+      color: var(--text-light);
+    }
+
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .category-select-wrapper {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .category-select-wrapper select {
+      flex: 1;
+    }
+
+    .category-select-wrapper button {
+      width: auto;
+      padding: 0 1rem;
+    }
+
+    .custom-category-input {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: -0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .custom-category-input input {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .custom-category-input button {
+      width: auto;
+      padding: 0 1rem;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .chart-container {
+      background-color: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      position: relative;
+      height: 300px;
+    }
+
+    .chart-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Finance Tracker Styles */
+    .finance-section {
+      margin-top: 3rem;
+      border-top: 1px solid var(--border);
+      padding-top: 2rem;
+    }
+
+    .finance-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .finance-summary-item {
+      background-color: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1rem;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .finance-summary-item h3 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-light);
+    }
+
+    .finance-summary-item p {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .income {
+      color: #10b981;
+    }
+
+    .expense {
+      color: #ef4444;
+    }
+
+    .balance {
+      color: var(--primary);
+    }
+
+    .finance-entries {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 1.5rem;
+    }
+
+    .finance-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      background-color: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .finance-entry-details {
+      flex: 1;
+    }
+
+    .finance-entry-amount {
+      font-weight: 600;
+      margin-left: 1rem;
+    }
+
+    .finance-entry-income {
+      color: #10b981;
+    }
+
+    .finance-entry-expense {
+      color: #ef4444;
+    }
+
+    .finance-entry-actions {
+      margin-left: 1rem;
+    }
+
+    .finance-entry-actions button {
+      width: auto;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    /* Auth Styles */
+    .auth-container {
+      max-width: 400px;
+      margin: 5rem auto;
+      padding: 2rem;
+      background-color: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+    }
+
+    .auth-container h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .auth-links {
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 0.875rem;
+    }
+
+    .auth-links a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .auth-links a:hover {
+      text-decoration: underline;
+    }
+
+    .error-message {
+      color: var(--error);
+      margin: 0.5rem 0;
+      font-size: 0.875rem;
+    }
+
+    .success-message {
+      color: var(--success);
+      margin: 0.5rem 0;
+      font-size: 0.875rem;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-weight: 500;
+    }
+
+    .tab.active {
+      border-bottom-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Study Planner Styles */
+    .todo-input {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .todo-input > * {
+      margin-bottom: 0;
+    }
+
+    .filter-section {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .task-list {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 1.5rem;
+    }
+
+    .task-item {
+      background-color: var(--card-bg);
+      padding: 1rem;
+      margin-bottom: 0.5rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .task-details {
+      flex: 1;
+      word-break: break-word;
+    }
+
+    .task-complete {
+      text-decoration: line-through;
+      color: var(--text-light);
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .progress-bar {
+      width: 100%;
+      background-color: var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      height: 24px;
+      margin-bottom: 1.5rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background-color: var(--success);
+      width: 0%;
+      text-align: center;
+      color: white;
+      font-weight: bold;
+      line-height: 24px;
+      transition: width 0.3s ease;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .filters {
+        grid-template-columns: 1fr;
+      }
+      
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .finance-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      .todo-input > * {
+        width: 100%;
+      }
+
+      .filter-section > * {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Authentication Screens -->
+  <div id="auth-container" class="auth-container hidden">
+    <div id="login-view">
+      <h2><i class="fas fa-lock"></i> Login</h2>
+      <div id="login-error" class="error-message"></div>
+      <div id="login-success" class="success-message"></div>
+      <input type="email" id="login-email" placeholder="Email">
+      <input type="password" id="login-password" placeholder="Password">
+      <button onclick="login()">
+        <i class="fas fa-sign-in-alt"></i> Login
+      </button>
+      <div class="auth-links">
+        <a href="#" onclick="showView('register-view')">Create Account</a> | 
+        <a href="#" onclick="showView('reset-view')">Forgot Password?</a>
+      </div>
+    </div>
+
+    <div id="register-view" class="hidden">
+      <h2><i class="fas fa-user-plus"></i> Register</h2>
+      <div id="register-error" class="error-message"></div>
+      <input type="email" id="register-email" placeholder="Email">
+      <input type="password" id="register-password" placeholder="Password (min 6 chars)">
+      <button onclick="register()">
+        <i class="fas fa-user-plus"></i> Register
+      </button>
+      <div class="auth-links">
+        <a href="#" onclick="showView('login-view')">Back to Login</a>
+      </div>
+    </div>
+
+    <div id="reset-view" class="hidden">
+      <h2><i class="fas fa-key"></i> Reset Password</h2>
+      <div id="reset-error" class="error-message"></div>
+      <div id="reset-success" class="success-message"></div>
+      <input type="email" id="reset-email" placeholder="Your Email">
+      <button onclick="sendPasswordReset()">
+        <i class="fas fa-paper-plane"></i> Send Reset Link
+      </button>
+      <div class="auth-links">
+        <a href="#" onclick="showView('login-view')">Back to Login</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App (hidden until authenticated) -->
+  <div id="app-container" class="container hidden">
+    <div class="top-bar">
+      <h1><i class="fas fa-book-open"></i> Journal, Finance & Study Planner</h1>
+      <div>
+        <button onclick="toggleTheme()" class="secondary" style="margin-right: 0.5rem;">
+          <i class="fas fa-moon"></i> Theme
+        </button>
+        <button onclick="logout()" class="danger">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('journal')">Journal</div>
+      <div class="tab" onclick="switchTab('finance')">Finance Tracker</div>
+      <div class="tab" onclick="switchTab('study')">Study Planner</div>
+      <div class="tab" onclick="switchTab('analytics')">Analytics</div>
+    </div>
+
+    <!-- Journal Tab -->
+    <div id="journal-tab" class="tab-content active">
+      <div class="card">
+        <h2><i class="fas fa-plus-circle"></i> New Entry</h2>
+        <input type="text" id="title" placeholder="Entry Title" />
+        <input type="date" id="date" />
+        <textarea id="content" rows="5" placeholder="Write your thoughts..."></textarea>
+        <div class="filters">
+          <div class="category-select-wrapper">
+            <select id="category">
+              <option value="">Select Category</option>
+              <option value="Bad Memories / Bad Past Events">Bad Memories / Bad Past Events</option>
+              <option value="History / Past Reflections">History / Past Reflections</option>
+              <option value="Achievements">Achievements</option>
+              <option value="Plans / Dreams">Plans / Dreams</option>
+              <option value="Implementation / Action Steps">Implementation / Action Steps</option>
+              <!-- Custom categories will be added here -->
+            </select>
+            <button onclick="showCustomCategoryInput()" class="secondary" title="Add custom category">
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+          <div id="custom-category-container" class="hidden">
+            <div class="custom-category-input">
+              <input type="text" id="new-category" placeholder="New category name" />
+              <button onclick="addCustomCategory()" class="secondary">
+                <i class="fas fa-check"></i> Add
+              </button>
+            </div>
+          </div>
+          <select id="mood">
+            <option value="😊">😊 Happy</option>
+            <option value="😃">😃 Excited</option>
+            <option value="😄">😄 Joyful</option>
+            <option value="😁">😁 Grinning</option>
+            <option value="😆">😆 Laughing</option>
+            <option value="😐">😐 Neutral</option>
+            <option value="😑">😑 Expressionless</option>
+            <option value="😶">😶 Silent</option>
+            <option value="😏">😏 Smirking</option>
+            <option value="😕">😕 Confused</option>
+            <option value="😟">😟 Worried</option>
+            <option value="🙁">🙁 Slightly Sad</option>
+            <option value="😮">😮 Surprised</option>
+            <option value="😯">😯 Astonished</option>
+            <option value="😲">😲 Amazed</option>
+            <option value="😳">😳 Flushed</option>
+            <option value="😦">😦 Frowning</option>
+            <option value="😧">😧 Anguished</option>
+            <option value="😨">😨 Fearful</option>
+            <option value="😰">😰 Anxious</option>
+            <option value="😥">😥 Disappointed</option>
+            <option value="😢">😢 Sad</option>
+            <option value="😭">😭 Crying</option>
+            <option value="😱">😱 Screaming</option>
+            <option value="😖">😖 Confounded</option>
+            <option value="😣">😣 Persevering</option>
+            <option value="😞">😞 Disappointed</option>
+            <option value="😓">😓 Sweating</option>
+            <option value="😩">😩 Weary</option>
+            <option value="😫">😫 Tired</option>
+            <option value="😠">😠 Angry</option>
+            <option value="😡">😡 Pouting</option>
+            <option value="👿">👿 Imp</option>
+            <option value="💀">💀 Skull</option>
+            <option value="💩">💩 Poop</option>
+            <option value="🤡">🤡 Clown</option>
+            <option value="👹">👹 Ogre</option>
+            <option value="👺">👺 Goblin</option>
+            <option value="👻">👻 Ghost</option>
+            <option value="👽">👽 Alien</option>
+            <option value="🤖">🤖 Robot</option>
+            <option value="😺">😺 Grinning Cat</option>
+            <option value="😸">😸 Grinning Cat with Smiling Eyes</option>
+            <option value="😹">😹 Cat with Tears of Joy</option>
+            <option value="😻">😻 Smiling Cat with Heart-Eyes</option>
+            <option value="😼">😼 Cat with Wry Smile</option>
+            <option value="😽">😽 Kissing Cat</option>
+            <option value="🙀">🙀 Weary Cat</option>
+            <option value="😿">😿 Crying Cat</option>
+            <option value="😾">😾 Pouting Cat</option>
+          </select>
+        </div>
+        <button onclick="addJournalEntry()">
+          <i class="fas fa-save"></i> Save Entry
+        </button>
+      </div>
+
+      <!-- Edit Journal Entry Form -->
+      <div id="edit-journal-container" class="card hidden">
+        <h2><i class="fas fa-edit"></i> Edit Entry</h2>
+        <input type="text" id="edit-title" placeholder="Entry Title" />
+        <input type="date" id="edit-date" />
+        <textarea id="edit-content" rows="5" placeholder="Write your thoughts..."></textarea>
+        <div class="filters">
+          <div class="category-select-wrapper">
+            <select id="edit-category">
+              <option value="">Select Category</option>
+              <option value="Bad Memories / Bad Past Events">Bad Memories / Bad Past Events</option>
+              <option value="History / Past Reflections">History / Past Reflections</option>
+              <option value="Achievements">Achievements</option>
+              <option value="Plans / Dreams">Plans / Dreams</option>
+              <option value="Implementation / Action Steps">Implementation / Action Steps</option>
+              <!-- Custom categories will be added here -->
+            </select>
+            <button onclick="showEditCustomCategoryInput()" class="secondary" title="Add custom category">
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+          <div id="edit-custom-category-container" class="hidden">
+            <div class="custom-category-input">
+              <input type="text" id="edit-new-category" placeholder="New category name" />
+              <button onclick="addEditCustomCategory()" class="secondary">
+                <i class="fas fa-check"></i> Add
+              </button>
+            </div>
+          </div>
+          <select id="edit-mood">
+            <option value="😊">😊 Happy</option>
+            <option value="😃">😃 Excited</option>
+            <option value="😄">😄 Joyful</option>
+            <option value="😁">😁 Grinning</option>
+            <option value="😆">😆 Laughing</option>
+            <option value="😐">😐 Neutral</option>
+            <option value="😑">😑 Expressionless</option>
+            <option value="😶">😶 Silent</option>
+            <option value="😏">😏 Smirking</option>
+            <option value="😕">😕 Confused</option>
+            <option value="😟">😟 Worried</option>
+            <option value="🙁">🙁 Slightly Sad</option>
+            <option value="😮">😮 Surprised</option>
+            <option value="😯">😯 Astonished</option>
+            <option value="😲">😲 Amazed</option>
+            <option value="😳">😳 Flushed</option>
+            <option value="😦">😦 Frowning</option>
+            <option value="😧">😧 Anguished</option>
+            <option value="😨">😨 Fearful</option>
+            <option value="😰">😰 Anxious</option>
+            <option value="😥">😥 Disappointed</option>
+            <option value="😢">😢 Sad</option>
+            <option value="😭">😭 Crying</option>
+            <option value="😱">😱 Screaming</option>
+            <option value="😖">😖 Confounded</option>
+            <option value="😣">😣 Persevering</option>
+            <option value="😞">😞 Disappointed</option>
+            <option value="😓">😓 Sweating</option>
+            <option value="😩">😩 Weary</option>
+            <option value="😫">😫 Tired</option>
+            <option value="😠">😠 Angry</option>
+            <option value="😡">😡 Pouting</option>
+            <option value="👿">👿 Imp</option>
+            <option value="💀">💀 Skull</option>
+            <option value="💩">💩 Poop</option>
+            <option value="🤡">🤡 Clown</option>
+            <option value="👹">👹 Ogre</option>
+            <option value="👺">👺 Goblin</option>
+            <option value="👻">👻 Ghost</option>
+            <option value="👽">👽 Alien</option>
+            <option value="🤖">🤖 Robot</option>
+            <option value="😺">😺 Grinning Cat</option>
+            <option value="😸">😸 Grinning Cat with Smiling Eyes</option>
+            <option value="😹">😹 Cat with Tears of Joy</option>
+            <option value="😻">😻 Smiling Cat with Heart-Eyes</option>
+            <option value="😼">😼 Cat with Wry Smile</option>
+            <option value="😽">😽 Kissing Cat</option>
+            <option value="🙀">🙀 Weary Cat</option>
+            <option value="😿">😿 Crying Cat</option>
+            <option value="😾">😾 Pouting Cat</option>
+          </select>
+        </div>
+        <input type="hidden" id="edit-entry-id">
+        <div class="btn-group">
+          <button onclick="saveEditedEntry()">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+          <button onclick="cancelEdit()" class="secondary">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-filter"></i> Filter Entries</h2>
+        <div class="filters">
+          <input type="text" id="search" placeholder="Search entries..." oninput="searchJournalEntries()" />
+          <input type="date" id="filter-date" onchange="searchJournalEntries()" />
+          <select id="filter-category" onchange="searchJournalEntries()">
+            <option value="">All Categories</option>
+            <option value="Bad Memories / Bad Past Events">Bad Memories / Bad Past Events</option>
+            <option value="History / Past Reflections">History / Past Reflections</option>
+            <option value="Achievements">Achievements</option>
+            <option value="Plans / Dreams">Plans / Dreams</option>
+            <option value="Implementation / Action Steps">Implementation / Action Steps</option>
+            <!-- Custom categories will be added here -->
+          </select>
+          <select id="filter-mood" onchange="searchJournalEntries()">
+            <option value="">All Moods</option>
+            <option value="😊">😊 Happy</option>
+            <option value="😃">😃 Excited</option>
+            <option value="😄">😄 Joyful</option>
+            <option value="😁">😁 Grinning</option>
+            <option value="😆">😆 Laughing</option>
+            <option value="😐">😐 Neutral</option>
+            <option value="😑">😑 Expressionless</option>
+            <option value="😶">😶 Silent</option>
+            <option value="😏">😏 Smirking</option>
+            <option value="😕">😕 Confused</option>
+            <option value="😟">😟 Worried</option>
+            <option value="🙁">🙁 Slightly Sad</option>
+            <option value="😮">😮 Surprised</option>
+            <option value="😯">😯 Astonished</option>
+            <option value="😲">😲 Amazed</option>
+            <option value="😳">😳 Flushed</option>
+            <option value="😦">😦 Frowning</option>
+            <option value="😧">😧 Anguished</option>
+            <option value="😨">😨 Fearful</option>
+            <option value="😰">😰 Anxious</option>
+            <option value="😥">😥 Disappointed</option>
+            <option value="😢">😢 Sad</option>
+            <option value="😭">😭 Crying</option>
+            <option value="😱">😱 Screaming</option>
+            <option value="😖">😖 Confounded</option>
+            <option value="😣">😣 Persevering</option>
+            <option value="😞">😞 Disappointed</option>
+            <option value="😓">😓 Sweating</option>
+            <option value="😩">😩 Weary</option>
+            <option value="😫">😫 Tired</option>
+            <option value="😠">😠 Angry</option>
+            <option value="😡">😡 Pouting</option>
+            <option value="👿">👿 Imp</option>
+            <option value="💀">💀 Skull</option>
+            <option value="💩">💩 Poop</option>
+            <option value="🤡">🤡 Clown</option>
+            <option value="👹">👹 Ogre</option>
+            <option value="👺">👺 Goblin</option>
+            <option value="👻">👻 Ghost</option>
+            <option value="👽">👽 Alien</option>
+            <option value="🤖">🤖 Robot</option>
+            <option value="😺">😺 Grinning Cat</option>
+            <option value="😸">😸 Grinning Cat with Smiling Eyes</option>
+            <option value="😹">😹 Cat with Tears of Joy</option>
+            <option value="😻">😻 Smiling Cat with Heart-Eyes</option>
+            <option value="😼">😼 Cat with Wry Smile</option>
+            <option value="😽">😽 Kissing Cat</option>
+            <option value="🙀">🙀 Weary Cat</option>
+            <option value="😿">😿 Crying Cat</option>
+            <option value="😾">😾 Pouting Cat</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button onclick="exportJournalEntries()">
+          <i class="fas fa-file-export"></i> Export
+        </button>
+        <div class="file-input-wrapper">
+          <button class="secondary">
+            <i class="fas fa-file-import"></i> Import
+          </button>
+          <input type="file" id="importFile" accept=".json" onchange="importJournalEntries(event)" />
+        </div>
+        <button onclick="clearAllJournalEntries()" class="danger">
+          <i class="fas fa-trash"></i> Clear All
+        </button>
+      </div>
+
+      <div id="journal-entries">
+        <div class="empty-state">
+          <i class="fas fa-book"></i>
+          <h3>No entries yet</h3>
+          <p>Start by adding your first journal entry above</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Finance Tracker Tab -->
+    <div id="finance-tab" class="tab-content">
+      <div class="card">
+        <h2><i class="fas fa-plus-circle"></i> New Transaction</h2>
+        <input type="text" id="finance-desc" placeholder="Description">
+        <input type="number" id="finance-amount" placeholder="Amount (₹)">
+        <input type="date" id="finance-date">
+        <select id="finance-type">
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+        <input type="text" id="finance-category" placeholder="Category (e.g. Food, Salary)">
+        <button onclick="addFinanceEntry()">
+          <i class="fas fa-save"></i> Add Transaction
+        </button>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-filter"></i> Filter Transactions</h2>
+        <div class="filters">
+          <label>By Date: <input type="date" id="finance-filter-date" onchange="loadFinanceEntries()"></label>
+          <label>By Month: <input type="month" id="finance-filter-month" onchange="loadFinanceEntries()"></label>
+          <label>By Year: <input type="number" id="finance-filter-year" placeholder="e.g. 2025" onchange="loadFinanceEntries()"></label>
+        </div>
+      </div>
+
+      <div class="finance-summary">
+        <div class="finance-summary-item">
+          <h3>Income</h3>
+          <p class="income">₹<span id="total-income">0</span></p>
+        </div>
+        <div class="finance-summary-item">
+          <h3>Expense</h3>
+          <p class="expense">₹<span id="total-expense">0</span></p>
+        </div>
+        <div class="finance-summary-item">
+          <h3>Balance</h3>
+          <p class="balance">₹<span id="finance-balance">0</span></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-list"></i> Recent Transactions</h2>
+        <div id="finance-entries" class="finance-entries">
+          <div class="empty-state">
+            <i class="fas fa-wallet"></i>
+            <h3>No transactions yet</h3>
+            <p>Start by adding your first transaction above</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Study Planner Tab -->
+    <div id="study-tab" class="tab-content">
+      <div class="card">
+        <h2><i class="fas fa-plus-circle"></i> Add Study Task</h2>
+        <div class="todo-input">
+          <input type="text" id="taskInput" placeholder="Task">
+          <input type="text" id="subjectInput" placeholder="Subject">
+          <input type="date" id="taskDate">
+          <select id="taskPriority">
+            <option value="Low">Low</option>
+            <option value="Medium" selected>Medium</option>
+            <option value="High">High</option>
+          </select>
+          <button onclick="addTask()">
+            <i class="fas fa-plus"></i> Add Task
+          </button>
+          <button onclick="exportTasks()" class="secondary">
+            <i class="fas fa-file-export"></i> Export
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-filter"></i> Filter Tasks</h2>
+        <div class="filter-section">
+          <select id="filterSubject" onchange="renderTasks()">
+            <option value="">All Subjects</option>
+          </select>
+          <select id="filterPriority" onchange="renderTasks()">
+            <option value="">All Priorities</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill">0%</div>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-tasks"></i> Your Tasks</h2>
+        <ul id="taskList" class="task-list">
+          <div class="empty-state">
+            <i class="fas fa-tasks"></i>
+            <h3>No tasks yet</h3>
+            <p>Start by adding your first task above</p>
+          </div>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div id="analytics-tab" class="tab-content">
+      <div class="card">
+        <h2><i class="fas fa-chart-pie"></i> Journal Analytics</h2>
+        <div class="chart-grid">
+          <div class="chart-container">
+            <h3>Category Distribution</h3>
+            <canvas id="categoryChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <h3>Mood Distribution</h3>
+            <canvas id="moodChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-chart-bar"></i> Finance Analytics</h2>
+        <div class="chart-grid">
+          <div class="chart-container">
+            <h3>Income by Category</h3>
+            <canvas id="incomeChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <h3>Expenses by Category</h3>
+            <canvas id="expenseChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-table"></i> Category Summary</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Entry Count</th>
+              <th>Mood Distribution</th>
+              <th>Latest Date</th>
+            </tr>
+          </thead>
+          <tbody id="category-summary-body">
+            <!-- Summary entries will go here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyD8Jn_pOd3ikyczCUGTu0rHB4MXZHNxCKU",
+      authDomain: "income-2dee6.firebaseapp.com",
+      databaseURL: "https://income-2dee6-default-rtdb.firebaseio.com",
+      projectId: "income-2dee6",
+      storageBucket: "income-2dee6.firebasestorage.app",
+      messagingSenderId: "800831075312",
+      appId: "1:800831075312:web:7e2cc2476533023d512335",
+      measurementId: "G-EZJTP0DCPD"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+
+    // Database references
+    let journalRef;
+    let financeRef;
+    let tasksRef;
+    let customCategories = [];
+    let categoryChartInstance = null;
+    let moodChartInstance = null;
+    let incomeChartInstance = null;
+    let expenseChartInstance = null;
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('date').valueAsDate = new Date();
+      document.getElementById('finance-date').valueAsDate = new Date();
+      document.getElementById('taskDate').valueAsDate = new Date();
+      showView('login-view');
+    });
+
+    // Authentication State Listener
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        // User is signed in
+        document.getElementById('auth-container').classList.add('hidden');
+        document.getElementById('app-container').classList.remove('hidden');
+        
+        // Initialize database references with user UID
+        journalRef = db.ref(`users/${user.uid}/journalEntries`);
+        financeRef = db.ref(`users/${user.uid}/financeEntries`);
+        tasksRef = db.ref(`users/${user.uid}/tasks`);
+        
+        loadJournalEntries();
+        loadFinanceEntries();
+        renderTasks();
+      } else {
+        // User is signed out
+        document.getElementById('auth-container').classList.remove('hidden');
+        document.getElementById('app-container').classList.add('hidden');
+        showView('login-view');
+      }
+    });
+
+    // Auth View Management
+    function showView(viewId) {
+      document.querySelectorAll('#auth-container > div').forEach(div => {
+        div.classList.add('hidden');
+      });
+      document.getElementById(viewId).classList.remove('hidden');
+      clearAuthMessages();
+    }
+
+    function clearAuthMessages() {
+      document.querySelectorAll('.error-message, .success-message').forEach(el => {
+        el.textContent = '';
+      });
+    }
+
+    // Authentication Functions
+    function login() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const errorElement = document.getElementById('login-error');
+      
+      errorElement.textContent = '';
+      
+      auth.signInWithEmailAndPassword(email, password)
+        .catch(error => {
+          errorElement.textContent = error.message;
+        });
+    }
+
+    function register() {
+      const email = document.getElementById('register-email').value;
+      const password = document.getElementById('register-password').value;
+      const errorElement = document.getElementById('register-error');
+      
+      errorElement.textContent = '';
+      
+      if (password.length < 6) {
+        errorElement.textContent = 'Password must be at least 6 characters';
+        return;
+      }
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(() => {
+          showView('login-view');
+          document.getElementById('login-success').textContent = 'Registration successful! Please login.';
+        })
+        .catch(error => {
+          errorElement.textContent = error.message;
+        });
+    }
+
+    function sendPasswordReset() {
+      const email = document.getElementById('reset-email').value;
+      const errorElement = document.getElementById('reset-error');
+      const successElement = document.getElementById('reset-success');
+      
+      errorElement.textContent = '';
+      successElement.textContent = '';
+      
+      auth.sendPasswordResetEmail(email)
+        .then(() => {
+          successElement.textContent = 'Password reset email sent. Check your inbox.';
+        })
+        .catch(error => {
+          errorElement.textContent = error.message;
+        });
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    // Tab Management
+    function switchTab(tabName) {
+      // Update active tab
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+
+      // Update active content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(`${tabName}-tab`).classList.add('active');
+    }
+
+    // Theme Management
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      const themeIcon = document.querySelector('.top-bar button.secondary i');
+      if (document.body.classList.contains('dark-mode')) {
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+      } else {
+        themeIcon.classList.replace('fa-sun', 'fa-moon');
+      }
+      
+      // Redraw charts with updated theme
+      if (categoryChartInstance) categoryChartInstance.update();
+      if (moodChartInstance) moodChartInstance.update();
+      if (incomeChartInstance) incomeChartInstance.update();
+      if (expenseChartInstance) expenseChartInstance.update();
+    }
+
+    // Journal Functions
+    function showCustomCategoryInput() {
+      document.getElementById('custom-category-container').classList.remove('hidden');
+      document.getElementById('new-category').focus();
+    }
+
+    function showEditCustomCategoryInput() {
+      document.getElementById('edit-custom-category-container').classList.remove('hidden');
+      document.getElementById('edit-new-category').focus();
+    }
+
+    function addCustomCategory() {
+      const newCategory = document.getElementById('new-category').value.trim();
+      if (!newCategory) return;
+
+      // Add to custom categories if not already exists
+      if (!customCategories.includes(newCategory)) {
+        customCategories.push(newCategory);
+      }
+
+      // Add to all category dropdowns
+      addCategoryToDropdowns(newCategory);
+
+      // Select the new category
+      document.getElementById('category').value = newCategory;
+
+      // Hide the input and clear it
+      document.getElementById('custom-category-container').classList.add('hidden');
+      document.getElementById('new-category').value = '';
+    }
+
+    function addEditCustomCategory() {
+      const newCategory = document.getElementById('edit-new-category').value.trim();
+      if (!newCategory) return;
+
+      // Add to custom categories if not already exists
+      if (!customCategories.includes(newCategory)) {
+        customCategories.push(newCategory);
+      }
+
+      // Add to all category dropdowns
+      addCategoryToDropdowns(newCategory);
+
+      // Select the new category in the edit form
+      document.getElementById('edit-category').value = newCategory;
+
+      // Hide the input and clear it
+      document.getElementById('edit-custom-category-container').classList.add('hidden');
+      document.getElementById('edit-new-category').value = '';
+    }
+
+    function addCategoryToDropdowns(category) {
+      // Add to main category dropdown if not already exists
+      const categorySelect = document.getElementById('category');
+      if (!Array.from(categorySelect.options).some(opt => opt.value === category)) {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categorySelect.appendChild(option);
+      }
+
+      // Add to filter category dropdown if not already exists
+      const filterCategorySelect = document.getElementById('filter-category');
+      if (!Array.from(filterCategorySelect.options).some(opt => opt.value === category)) {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        filterCategorySelect.appendChild(option);
+      }
+
+      // Add to edit category dropdown if not already exists
+      const editCategorySelect = document.getElementById('edit-category');
+      if (!Array.from(editCategorySelect.options).some(opt => opt.value === category)) {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        editCategorySelect.appendChild(option);
+      }
+    }
+
+    async function addJournalEntry() {
+      const title = document.getElementById('title').value;
+      const date = document.getElementById('date').value;
+      const content = document.getElementById('content').value;
+      const category = document.getElementById('category').value;
+      const mood = document.getElementById('mood').value;
+
+      if (!title || !date || !content || !category) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+
+      const entry = { 
+        title, 
+        date, 
+        content, 
+        category, 
+        mood, 
+        timestamp: Date.now() 
+      };
+      
+      try {
+        await journalRef.push(entry);
+        clearJournalForm();
+      } catch (error) {
+        console.error("Error adding entry:", error);
+        alert("Failed to save entry. Please try again.");
+      }
+    }
+
+    function editJournalEntry(id) {
+      // Get the entry data
+      journalRef.child(id).once('value', (snapshot) => {
+        const entry = snapshot.val();
+        
+        // Populate the edit form
+        document.getElementById('edit-title').value = entry.title;
+        document.getElementById('edit-date').value = entry.date;
+        document.getElementById('edit-content').value = entry.content;
+        document.getElementById('edit-category').value = entry.category;
+        document.getElementById('edit-mood').value = entry.mood;
+        document.getElementById('edit-entry-id').value = id;
+        
+        // Show the edit form
+        document.getElementById('edit-journal-container').classList.remove('hidden');
+        
+        // Scroll to the edit form
+        document.getElementById('edit-journal-container').scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+
+    async function saveEditedEntry() {
+      const id = document.getElementById('edit-entry-id').value;
+      const title = document.getElementById('edit-title').value;
+      const date = document.getElementById('edit-date').value;
+      const content = document.getElementById('edit-content').value;
+      const category = document.getElementById('edit-category').value;
+      const mood = document.getElementById('edit-mood').value;
+
+      if (!title || !date || !content || !category) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+
+      const updatedEntry = { 
+        title, 
+        date, 
+        content, 
+        category, 
+        mood,
+        timestamp: Date.now() 
+      };
+      
+      try {
+        await journalRef.child(id).update(updatedEntry);
+        document.getElementById('edit-journal-container').classList.add('hidden');
+      } catch (error) {
+        console.error("Error updating entry:", error);
+        alert("Failed to update entry. Please try again.");
+      }
+    }
+
+    function cancelEdit() {
+      document.getElementById('edit-journal-container').classList.add('hidden');
+    }
+
+    function loadJournalEntries() {
+      const container = document.getElementById('journal-entries');
+
+      journalRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        container.innerHTML = '';
+
+        if (!data) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-book"></i>
+              <h3>No entries yet</h3>
+              <p>Start by adding your first journal entry above</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Convert the data object to an array and sort by timestamp
+        const entries = Object.entries(data).map(([key, value]) => ({
+          id: key,
+          ...value
+        })).sort((a, b) => b.timestamp - a.timestamp);
+
+        // Initialize category count, mood count, and latest dates objects
+        const categoryCount = {};
+        const categoryMoods = {};
+        const latestDates = {};
+        
+        // Initialize mood counts
+        const moodCount = {};
+        
+        // Initialize with default categories
+        const allCategories = [
+          "Bad Memories / Bad Past Events",
+          "History / Past Reflections",
+          "Achievements",
+          "Plans / Dreams",
+          "Implementation / Action Steps",
+          ...customCategories
+        ];
+        
+        allCategories.forEach(category => {
+          categoryCount[category] = 0;
+          categoryMoods[category] = {};
+          latestDates[category] = null;
+        });
+
+        entries.forEach(entry => {
+          const div = document.createElement('div');
+          div.className = 'entry';
+          div.innerHTML = `
+            <h3>${entry.title} <small>${entry.mood}</small></h3>
+            <small>${entry.date} - <strong>${entry.category}</strong></small>
+            <div class="entry-content">${entry.content}</div>
+            <div class="entry-actions">
+              <button onclick="editJournalEntry('${entry.id}')" class="secondary">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <button onclick="deleteJournalEntry('${entry.id}')" class="danger">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </div>
+          `;
+          container.appendChild(div);
+
+          // Update mood count
+          if (!moodCount[entry.mood]) {
+            moodCount[entry.mood] = 0;
+          }
+          moodCount[entry.mood]++;
+
+          // Update category count, mood distribution, and latest date
+          if (categoryCount[entry.category] !== undefined) {
+            categoryCount[entry.category]++;
+            
+            if (!categoryMoods[entry.category][entry.mood]) {
+              categoryMoods[entry.category][entry.mood] = 0;
+            }
+            categoryMoods[entry.category][entry.mood]++;
+            
+            if (!latestDates[entry.category] || new Date(entry.date) > new Date(latestDates[entry.category])) {
+              latestDates[entry.category] = entry.date;
+            }
+          } else {
+            // Handle case where category is not in our predefined list
+            categoryCount[entry.category] = 1;
+            categoryMoods[entry.category] = {};
+            categoryMoods[entry.category][entry.mood] = 1;
+            latestDates[entry.category] = entry.date;
+          }
+        });
+
+        // Display category summary with mood data
+        displayCategorySummary(categoryCount, categoryMoods, latestDates);
+        // Display Charts
+        displayCategoryChart(categoryCount);
+        displayMoodChart(moodCount);
+      });
+    }
+
+    function displayCategorySummary(categoryCount, categoryMoods, latestDates) {
+      const summaryBody = document.getElementById('category-summary-body');
+      summaryBody.innerHTML = '';
+
+      // Sort categories by count (descending)
+      const sortedCategories = Object.keys(categoryCount).sort((a, b) => categoryCount[b] - categoryCount[a]);
+
+      sortedCategories.forEach(category => {
+        if (categoryCount[category] > 0) {
+          const row = document.createElement('tr');
+          
+          // Create mood distribution text
+          const moodText = [];
+          for (const [mood, count] of Object.entries(categoryMoods[category])) {
+            if (count > 0) {
+              moodText.push(`${mood} ${count}`);
+            }
+          }
+          
+          row.innerHTML = `
+            <td>${category}</td>
+            <td>${categoryCount[category]}</td>
+            <td>${moodText.join(', ')}</td>
+            <td>${latestDates[category] || 'N/A'}</td>
+          `;
+          summaryBody.appendChild(row);
+        }
+      });
+    }
+
+    function displayCategoryChart(categoryCount) {
+      const ctx = document.getElementById('categoryChart').getContext('2d');
+
+      // Filter out categories with 0 entries and sort by count
+      const filteredCategories = Object.entries(categoryCount)
+        .filter(([_, count]) => count > 0)
+        .sort((a, b) => b[1] - a[1]);
+
+      const labels = filteredCategories.map(([category]) => category);
+      const data = filteredCategories.map(([_, count]) => count);
+
+      if (categoryChartInstance) {
+        categoryChartInstance.destroy();
+      }
+
+      // Generate distinct colors for each category
+      const backgroundColors = labels.map((_, index) => {
+        const hue = (index * 137.508) % 360; // Golden angle for distinct colors
+        return `hsl(${hue}, 70%, 60%)`;
+      });
+
+      categoryChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Entry Count',
+            data: data,
+            backgroundColor: backgroundColors,
+            borderColor: document.body.classList.contains('dark-mode') ? '#333' : '#fff',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0,
+                color: document.body.classList.contains('dark-mode') ? '#fff' : '#666'
+              },
+              grid: {
+                color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                color: document.body.classList.contains('dark-mode') ? '#fff' : '#666'
+              },
+              grid: {
+                color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+              }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: 'Category Distribution',
+              font: {
+                size: 16,
+                color: document.body.classList.contains('dark-mode') ? '#fff' : '#666'
+              }
+            },
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.parsed.y + ' entries';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function displayMoodChart(moodCount) {
+      const ctx = document.getElementById('moodChart').getContext('2d');
+
+      // Filter out moods with 0 entries
+      const filteredMoods = Object.entries(moodCount)
+        .filter(([_, count]) => count > 0);
+
+      const labels = filteredMoods.map(([mood]) => mood);
+      const data = filteredMoods.map(([_, count]) => count);
+
+      if (moodChartInstance) {
+        moodChartInstance.destroy();
+      }
+
+      // Mood-specific colors
+      const backgroundColors = labels.map(mood => {
+        // Happy/positive emotions - greens and yellows
+        if (["😊", "😃", "😄", "😁", "😆", "😍", "🤩", "😎", "😋", "😛", "😜", "🤪", "😇", "🥰", "🤗", "😺", "😸", "😹", "😻"].includes(mood)) {
+          return '#4ade80'; // green
+        }
+        // Neutral emotions - grays and blues
+        if (["😐", "😑", "😶", "😏", "🙄", "🤔", "🤨", "😒", "😌", "😪", "😴", "😼", "😽"].includes(mood)) {
+          return '#94a3b8'; // gray
+        }
+        // Sad/negative emotions - blues and purples
+        if (["😕", "😟", "🙁", "😮", "😯", "😲", "😳", "😦", "😧", "😨", "😰", "😥", "😢", "😭", "😱", "😖", "😣", "😞", "😓", "😩", "😫", "🙀", "😿"].includes(mood)) {
+          return '#60a5fa'; // blue
+        }
+        // Angry/negative emotions - reds and oranges
+        if (["😠", "😡", "🤬", "👿", "💀", "💩", "🤡", "👹", "👺", "😾"].includes(mood)) {
+          return '#f87171'; // red
+        }
+        // Other/weird - purples and pinks
+        return '#c084fc'; // purple fallback
+      });
+
+      moodChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Entry Count',
+            data: data,
+            backgroundColor: backgroundColors,
+            borderColor: document.body.classList.contains('dark-mode') ? '#333' : '#fff',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0,
+                color: document.body.classList.contains('dark-mode') ? '#fff' : '#666'
+              },
+              grid: {
+                color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                color: document.body.classList.contains('dark-mode') ? '#fff' : '#666'
+              },
+              grid: {
+                color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+              }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: 'Mood Distribution',
+              font: {
+                size: 16,
+                color: document.body.classList.contains('dark-mode') ? '#fff' : '#666'
+              }
+            },
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.parsed.y + ' entries';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    async function deleteJournalEntry(id) {
+      if (confirm("Are you sure you want to delete this entry?")) {
+        try {
+          const entryRef = db.ref(`users/${auth.currentUser.uid}/journalEntries/${id}`);
+          await entryRef.remove();
+        } catch (error) {
+          console.error("Error deleting entry:", error);
+          alert("Failed to delete entry. Please try again.");
+        }
+      }
+    }
+
+    function clearJournalForm() {
+      document.getElementById('title').value = '';
+      document.getElementById('date').valueAsDate = new Date();
+      document.getElementById('content').value = '';
+      document.getElementById('category').value = '';
+      document.getElementById('mood').value = '😊';
+    }
+
+    function exportJournalEntries() {
+      journalRef.once('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data || Object.keys(data).length === 0) {
+          alert("No entries to export.");
+          return;
+        }
+        
+        // Convert the data object to an array
+        const entries = Object.entries(data).map(([key, value]) => ({
+          id: key,
+          ...value
+        }));
+        
+        const exportData = {
+          entries: entries,
+          customCategories: customCategories
+        };
+        
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'journal_entries_' + new Date().toISOString().split('T')[0] + '.json';
+        link.click();
+      });
+    }
+
+    function importJournalEntries(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          
+          if (!importedData.entries || !Array.isArray(importedData.entries)) {
+            alert("Invalid file format. Please import a valid journal export file.");
+            return;
+          }
+
+          if (confirm(`Import ${importedData.entries.length} entries? This will add to your existing entries.`)) {
+            // Import custom categories if they exist
+            if (importedData.customCategories && Array.isArray(importedData.customCategories)) {
+              importedData.customCategories.forEach(category => {
+                if (!customCategories.includes(category)) {
+                  customCategories.push(category);
+                  addCategoryToDropdowns(category);
+                }
+              });
+            }
+
+            // Import entries
+            importedData.entries.forEach(async (entry) => {
+              try {
+                await journalRef.push({
+                  title: entry.title,
+                  date: entry.date,
+                  content: entry.content,
+                  category: entry.category,
+                  mood: entry.mood,
+                  timestamp: entry.timestamp || Date.now()
+                });
+              } catch (error) {
+                console.error("Error importing entry:", error);
+              }
+            });
+            
+            alert("Entries are being imported in the background. They will appear shortly.");
+          }
+        } catch (err) {
+          console.error("Error reading the file:", err);
+          alert("Error reading the file. Please check the file format.");
+        }
+        event.target.value = ''; // Reset file input
+      };
+      reader.readAsText(file);
+    }
+
+    async function clearAllJournalEntries() {
+      if (confirm("Are you sure you want to clear ALL journal entries? This cannot be undone.")) {
+        try {
+          await journalRef.remove();
+          alert("All journal entries have been cleared.");
+        } catch (error) {
+          console.error("Error clearing entries:", error);
+          alert("Failed to clear entries. Please try again.");
+        }
+      }
+    }
+
+    function searchJournalEntries() {
+      const searchQuery = document.getElementById('search').value.toLowerCase();
+      const filterDate = document.getElementById('filter-date').value;
+      const filterCategory = document.getElementById('filter-category').value;
+      const filterMood = document.getElementById('filter-mood').value;
+
+      const container = document.getElementById('journal-entries');
+
+      journalRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        container.innerHTML = '';
+
+        if (!data) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-book"></i>
+              <h3>No matching entries</h3>
+              <p>Try adjusting your filters or search terms</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Convert the data object to an array and sort by timestamp
+        const entries = Object.entries(data).map(([key, value]) => ({
+          id: key,
+          ...value
+        })).sort((a, b) => b.timestamp - a.timestamp);
+
+        const filteredEntries = entries.filter(entry => {
+          const matchesSearch = entry.title.toLowerCase().includes(searchQuery) || 
+                               entry.content.toLowerCase().includes(searchQuery);
+          const matchesDate = !filterDate || entry.date === filterDate;
+          const matchesCategory = !filterCategory || entry.category === filterCategory;
+          const matchesMood = !filterMood || entry.mood === filterMood;
+          return matchesSearch && matchesDate && matchesCategory && matchesMood;
+        });
+
+        if (filteredEntries.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-book"></i>
+              <h3>No matching entries</h3>
+              <p>Try adjusting your filters or search terms</p>
+            </div>
+          `;
+          return;
+        }
+
+        filteredEntries.forEach(entry => {
+          const div = document.createElement('div');
+          div.className = 'entry';
+          div.innerHTML = `
+            <h3>${entry.title} <small>${entry.mood}</small></h3>
+            <small>${entry.date} - <strong>${entry.category}</strong></small>
+            <div class="entry-content">${entry.content}</div>
+            <div class="entry-actions">
+              <button onclick="editJournalEntry('${entry.id}')" class="secondary">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <button onclick="deleteJournalEntry('${entry.id}')" class="danger">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      });
+    }
+
+    // Finance Tracker Functions
+    function addFinanceEntry() {
+      const desc = document.getElementById("finance-desc").value;
+      const amount = parseFloat(document.getElementById("finance-amount").value);
+      const type = document.getElementById("finance-type").value;
+      const date = document.getElementById("finance-date").value;
+      const category = document.getElementById("finance-category").value;
+      
+      if (!desc || !amount || !date || !category) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+
+      financeRef.push({ 
+        desc, 
+        amount, 
+        type, 
+        date, 
+        category,
+        timestamp: Date.now()
+      }, () => {
+        document.getElementById("finance-desc").value = '';
+        document.getElementById("finance-amount").value = '';
+        document.getElementById("finance-date").value = '';
+        document.getElementById("finance-category").value = '';
+        loadFinanceEntries();
+      });
+    }
+
+    function deleteFinanceEntry(key) {
+      if (confirm("Are you sure you want to delete this transaction?")) {
+        financeRef.child(key).remove().then(loadFinanceEntries);
+      }
+    }
+
+    function loadFinanceEntries() {
+      const container = document.getElementById("finance-entries");
+      container.innerHTML = "";
+
+      const filterDate = document.getElementById("finance-filter-date").value;
+      const filterMonth = document.getElementById("finance-filter-month").value;
+      const filterYear = document.getElementById("finance-filter-year").value;
+
+      financeRef.once("value", snapshot => {
+        let income = 0, expense = 0;
+        const incomeData = {};
+        const expenseData = {};
+
+        snapshot.forEach(child => {
+          const item = child.val();
+          const itemDate = new Date(item.date);
+          
+          // Apply filters
+          if (filterDate && item.date !== filterDate) return;
+          if (filterMonth && item.date.slice(0, 7) !== filterMonth) return;
+          if (filterYear && itemDate.getFullYear().toString() !== filterYear) return;
+
+          const entryDiv = document.createElement('div');
+          entryDiv.className = 'finance-entry';
+          
+          const detailsDiv = document.createElement('div');
+          detailsDiv.className = 'finance-entry-details';
+          detailsDiv.innerHTML = `
+            <strong>${item.date}</strong> - ${item.desc} [${item.category}]
+          `;
+          
+          const amountDiv = document.createElement('div');
+          amountDiv.className = `finance-entry-amount finance-entry-${item.type}`;
+          amountDiv.textContent = `₹${item.amount.toFixed(2)}`;
+          
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'finance-entry-actions';
+          actionsDiv.innerHTML = `
+            <button onclick="deleteFinanceEntry('${child.key}')" class="danger">
+              <i class="fas fa-trash"></i>
+            </button>
+          `;
+          
+          entryDiv.appendChild(detailsDiv);
+          entryDiv.appendChild(amountDiv);
+          entryDiv.appendChild(actionsDiv);
+          container.appendChild(entryDiv);
+
+          if (item.type === "income") {
+            income += item.amount;
+            incomeData[item.category] = (incomeData[item.category] || 0) + item.amount;
+          } else {
+            expense += item.amount;
+            expenseData[item.category] = (expenseData[item.category] || 0) + item.amount;
+          }
+        });
+
+        // Update summary
+        document.getElementById("total-income").textContent = income.toFixed(2);
+        document.getElementById("total-expense").textContent = expense.toFixed(2);
+        document.getElementById("finance-balance").textContent = (income - expense).toFixed(2);
+
+        // Render charts
+        renderFinanceCharts(incomeData, expenseData);
+
+        // Show empty state if no entries
+        if (snapshot.numChildren() === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-wallet"></i>
+              <h3>No transactions yet</h3>
+              <p>Start by adding your first transaction above</p>
+            </div>
+          `;
+        }
+      });
+    }
+
+    function renderFinanceCharts(incomeData, expenseData) {
+      // Destroy existing charts if they exist
+      if (incomeChartInstance) incomeChartInstance.destroy();
+      if (expenseChartInstance) expenseChartInstance.destroy();
+
+      // Income Bar Chart
+      const incomeCtx = document.getElementById('incomeChart').getContext('2d');
+      incomeChartInstance = new Chart(incomeCtx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(incomeData),
+          datasets: [{
+            label: 'Income (₹)',
+            data: Object.values(incomeData),
+            backgroundColor: '#10b981',
+            borderColor: document.body.classList.contains('dark-mode') ? '#333' : '#fff',
+            borderWidth: 1
+          }]
+        },
+        options: getBarChartOptions('Income by Category')
+      });
+
+      // Expense Bar Chart
+      const expenseCtx = document.getElementById('expenseChart').getContext('2d');
+      expenseChartInstance = new Chart(expenseCtx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(expenseData),
+          datasets: [{
+            label: 'Expenses (₹)',
+            data: Object.values(expenseData),
+            backgroundColor: '#ef4444',
+            borderColor: document.body.classList.contains('dark-mode') ? '#333' : '#fff',
+            borderWidth: 1
+          }]
+        },
+        options: getBarChartOptions('Expenses by Category')
+      });
+    }
+
+    function getBarChartOptions(title) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '₹' + value;
+              },
+              color: document.body.classList.contains('dark-mode') ? '#fff' : '#666'
+            },
+            grid: {
+              color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+            }
+          },
+          x: {
+            ticks: {
+              color: document.body.classList.contains('dark-mode') ? '#fff' : '#666'
+            },
+            grid: {
+              color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+            }
+          }
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: title,
+            font: {
+              size: 16,
+              color: document.body.classList.contains('dark-mode') ? '#fff' : '#666'
+            }
+          },
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return ` ₹${context.parsed.y.toFixed(2)}`;
+              }
+            }
+          }
+        }
+      };
+    }
+
+    // Study Planner Functions
+    function addTask() {
+      const taskInput = document.getElementById('taskInput').value.trim();
+      const subjectInput = document.getElementById('subjectInput').value.trim();
+      const dateInput = document.getElementById('taskDate').value;
+      const priority = document.getElementById('taskPriority').value;
+
+      if (!taskInput) {
+        alert("Please enter a task description.");
+        return;
+      }
+
+      const newTask = {
+        text: taskInput,
+        subject: subjectInput,
+        date: dateInput,
+        priority: priority,
+        completed: false
+      };
+
+      tasksRef.push(newTask, () => {
+        document.getElementById('taskInput').value = '';
+        document.getElementById('subjectInput').value = '';
+        document.getElementById('taskDate').valueAsDate = new Date();
+        document.getElementById('taskPriority').value = 'Medium';
+      });
+    }
+
+    function renderTasks() {
+      const subjectFilter = document.getElementById('filterSubject').value;
+      const priorityFilter = document.getElementById('filterPriority').value;
+      const taskList = document.getElementById('taskList');
+
+      tasksRef.on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        taskList.innerHTML = '';
+
+        const subjects = new Set();
+        const filteredTasks = [];
+
+        for (const [key, task] of Object.entries(data)) {
+          if (task.subject) subjects.add(task.subject);
+
+          if (
+            (!subjectFilter || task.subject === subjectFilter) &&
+            (!priorityFilter || task.priority === priorityFilter)
+          ) {
+            filteredTasks.push({ key, ...task });
+          }
+        }
+
+        // Update subject filter dropdown
+        const subjectSelect = document.getElementById('filterSubject');
+        subjectSelect.innerHTML = '<option value="">All Subjects</option>';
+        subjects.forEach(subject => {
+          const opt = document.createElement('option');
+          opt.value = subject;
+          opt.textContent = subject;
+          subjectSelect.appendChild(opt);
+        });
+
+        if (filteredTasks.length === 0) {
+          taskList.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-tasks"></i>
+              <h3>No tasks found</h3>
+              <p>Try adjusting your filters</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Sort tasks by date then priority
+        filteredTasks.sort((a, b) => {
+          if (a.date && b.date) {
+            return new Date(a.date) - new Date(b.date);
+          }
+          return 0;
+        });
+
+        filteredTasks.forEach(({ key, text, subject, date, priority, completed }) => {
+          const li = document.createElement('li');
+          li.className = 'task-item';
+          
+          const detailsDiv = document.createElement('div');
+          detailsDiv.className = completed ? 'task-details task-complete' : 'task-details';
+          detailsDiv.innerHTML = `
+            <input type="checkbox" ${completed ? 'checked' : ''} 
+                   onchange="toggleComplete('${key}', ${!completed})">
+            <strong>${text}</strong> 
+            ${subject ? `— ${subject} ` : ''}
+            ${date ? `— ${date} ` : ''}
+            [${priority}]
+          `;
+          
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'task-actions';
+          actionsDiv.innerHTML = `
+            <button onclick="removeTask('${key}')" class="danger">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          `;
+          
+          li.appendChild(detailsDiv);
+          li.appendChild(actionsDiv);
+          taskList.appendChild(li);
+        });
+
+        updateProgress(filteredTasks);
+      });
+    }
+
+    function updateProgress(tasks) {
+      const total = tasks.length;
+      const done = tasks.filter(t => t.completed).length;
+      const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+      const bar = document.getElementById('progressFill');
+      bar.style.width = percent + '%';
+      bar.textContent = percent + '%';
+    }
+
+    function exportTasks() {
+      tasksRef.once('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data || Object.keys(data).length === 0) {
+          alert("No tasks to export.");
+          return;
+        }
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'study_tasks.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    window.toggleComplete = (key, completed) => {
+      db.ref(`users/${auth.currentUser.uid}/tasks/${key}`).update({ completed });
+    };
+
+    window.removeTask = (key) => {
+      if (confirm("Are you sure you want to delete this task?")) {
+        db.ref(`users/${auth.currentUser.uid}/tasks/${key}`).remove();
+      }
+    };
+
+    // Make functions available globally
+    window.login = login;
+    window.register = register;
+    window.sendPasswordReset = sendPasswordReset;
+    window.logout = logout;
+    window.showView = showView;
+    window.switchTab = switchTab;
+    window.toggleTheme = toggleTheme;
+    window.showCustomCategoryInput = showCustomCategoryInput;
+    window.addCustomCategory = addCustomCategory;
+    window.showEditCustomCategoryInput = showEditCustomCategoryInput;
+    window.addEditCustomCategory = addEditCustomCategory;
+    window.addJournalEntry = addJournalEntry;
+    window.editJournalEntry = editJournalEntry;
+    window.saveEditedEntry = saveEditedEntry;
+    window.cancelEdit = cancelEdit;
+    window.deleteJournalEntry = deleteJournalEntry;
+    window.exportJournalEntries = exportJournalEntries;
+    window.importJournalEntries = importJournalEntries;
+    window.clearAllJournalEntries = clearAllJournalEntries;
+    window.searchJournalEntries = searchJournalEntries;
+    window.addFinanceEntry = addFinanceEntry;
+    window.deleteFinanceEntry = deleteFinanceEntry;
+    window.addTask = addTask;
+    window.renderTasks = renderTasks;
+    window.exportTasks = exportTasks;
+  </script>
+</body>
+</html>
