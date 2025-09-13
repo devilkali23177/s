@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Advanced Mind Map with Firebase Integration</title>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <!-- Firebase Auth UI -->
+  <div id="auth-container">
+    <div id="auth-box">
+      <h2>Mind Map Login</h2>
+      <div id="auth-message"></div>
+      <input type="email" id="email-input" placeholder="Email">
+      <input type="password" id="password-input" placeholder="Password">
+      <button id="login-btn">Login</button>
+      <button id="signup-btn">Sign Up</button>
+      <p>Or continue as</p>
+      <button id="guest-btn">Guest</button>
+    </div>
+  </div>
+
+  <!-- Mind Map Manager UI -->
+  <div id="map-manager-container">
+    <div id="map-manager-box">
+      <h2>Manage Mind Maps</h2>
+      <div id="new-map-form">
+        <input type="text" id="new-map-input" placeholder="New map name">
+        <button id="create-map-btn">Create New Map</button>
+      </div>
+      <div id="map-list">
+        <!-- Map items will be added here dynamically -->
+      </div>
+      <button id="close-map-manager">Close</button>
+    </div>
+  </div>
+
+  <!-- Node Context Menu -->
+  <div id="node-context-menu" class="context-menu">
+    <div class="context-menu-item" data-action="edit">Edit</div>
+    <div class="context-menu-item" data-action="color">Change Color</div>
+    <div class="context-menu-item" data-action="delete">Delete</div>
+    <div class="context-menu-item" data-action="add-child">Add Child Node</div>
+    <div class="context-menu-item" data-action="toggle-expand">Expand/Collapse</div>
+  </div>
+
+  <!-- Color Picker Menu -->
+  <div id="color-picker-menu" class="context-menu color-menu">
+    <div class="color-picker-header">Choose Color</div>
+    <div class="color-picker">
+      <!-- Color options will be added dynamically -->
+    </div>
+  </div>
+
+  <!-- Main Toolbar -->
+  <div id="toolbar">
+    <button id="addBtn" title="Add Node">+</button>
+    <button id="connectBtn" title="Connect Nodes">⇄</button>
+    <button id="editBtn" title="Edit Node">✎</button>
+    <button id="deleteBtn" title="Delete">🗑️</button>
+    <div class="separator"></div>
+    <button id="zoomInBtn" title="Zoom In">+</button>
+    <button id="zoomOutBtn" title="Zoom Out">-</button>
+    <button id="resetViewBtn" title="Reset View">⌂</button>
+    <div class="separator"></div>
+    <button id="colorBtn" title="Color">🎨</button>
+    <button id="exportBtn" title="Export">📤</button>
+    <button id="importBtn" title="Import">📥</button>
+    <div class="separator"></div>
+    <select id="layoutBtn" title="Layout Options">
+      <option value="">Layout</option>
+      <option value="horizontal">Horizontal</option>
+      <option value="vertical">Vertical</option>
+      <option value="radial">Radial</option>
+      <option value="tree">Tree</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="Search nodes...">
+    <div class="separator"></div>
+    <button id="saveBtn" title="Save to Cloud">💾</button>
+    <button id="loadBtn" title="Load from Cloud">📂</button>
+    <button id="mapsBtn" title="Manage Maps">🗺️</button>
+    <button id="expandCollapseBtn" title="Expand/Collapse All">↕</button>
+    <button id="logoutBtn" title="Logout" style="display:none;">🚪</button>
+  </div>
+
+  <!-- Stage and World Container -->
+  <div id="stage">
+    <div id="world">
+      <svg id="edges" width="100000000000000000000000000000000000000000000000000000000000000000000" height="100000000000000000000000000000000000000000000000000000000000000000000"></svg>
+    </div>
+  </div>
+
+  <!-- Zoom Display -->
+  <div id="zoom-display">100%</div>
+  
+  <!-- Edit Panel -->
+  <div id="overlay"></div>
+  <div id="edit-panel">
+    <h3>Edit Node Content</h3>
+    <textarea id="edit-textarea"></textarea>
+    <div id="edit-panel-buttons">
+      <button id="edit-panel-cancel">Cancel</button>
+      <button id="edit-panel-save">Save</button>
+    </div>
+  </div>
+
+  <!-- Import Input (Hidden) -->
+  <input type="file" id="importInput" accept=".json" style="display: none;">
+  
+  <!-- JavaScript Files -->
+  <script src="scripts/firebase.js"></script>
+  <script src="scripts/node-manager.js"></script>
+  <script src="scripts/layout-manager.js"></script>
+  <script src="scripts/ui-manager.js"></script>
+  <script src="scripts/app.js"></script>
+</body>
+</html>
